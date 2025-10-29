@@ -156,7 +156,19 @@ make web
 
 ### 3. Command-Line Interface (CLI)
 
-**Usage:**
+**Launch Interactive UI:**
+```bash
+# Windows
+.\run.ps1 interactive
+
+# Linux/Mac
+make interactive
+
+# Or directly with poetry
+poetry run python -m src.interactive_cli
+```
+
+**Advanced CLI Usage (for automation/scripting):**
 ```bash
 # Test connection
 poetry run python -m src.cli ping
@@ -202,7 +214,7 @@ poetry run python -m src.cli symbols \
   --symbol BTCUSDT
 ```
 
-**Perfect for:** Automation, scripting, CI/CD
+**Perfect for:** Terminal users (interactive mode), automation/scripting (CLI mode)
 
 ---
 
