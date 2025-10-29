@@ -53,7 +53,7 @@ A production-ready Binance Futures Trading Bot for USDT-M Futures Testnet with m
 **Windows (PowerShell):**
 ```powershell
 # Clone repository
-git clone <repository-url>
+git clone https://github.com/zacjactech/CTBot
 cd ctbot
 
 # Install dependencies
@@ -67,7 +67,7 @@ notepad .env  # Add your Binance Testnet API keys
 **Linux/Mac:**
 ```bash
 # Clone repository
-git clone <repository-url>
+git clone https://github.com/zacjactech/CTBot
 cd ctbot
 
 # Install dependencies
@@ -717,7 +717,7 @@ This Binance Futures Trading Bot demonstrates:
 
 ---
 
-**Submitted by:** [Your Name]  
+**Submitted by:** Jacob Zaccheous  
 **Date:** October 29, 2025  
 **Position:** Junior Python Developer – Crypto Trading Bot  
-**GitHub:** [Your GitHub URL]
+**GitHub:** https://github.com/zacjactech
