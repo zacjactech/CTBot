@@ -28,9 +28,9 @@ def display_menu():
     table.add_column("Option", style="bold yellow", width=10)
     table.add_column("Description", style="white")
     
-    table.add_row("1", "Place Market Order")
-    table.add_row("2", "Place Limit Order")
-    table.add_row("3", "Place Stop Order (with Limit)")
+    table.add_row("1", "Place Market Order (+ optional SL/TP)")
+    table.add_row("2", "Place Limit Order (+ optional SL/TP)")
+    table.add_row("3", "Place Stop Order (+ optional SL/TP)")
     table.add_row("4", "Check Order Status")
     table.add_row("5", "Cancel Order")
     table.add_row("6", "View Symbol Info")
@@ -40,6 +40,45 @@ def display_menu():
     console.print("\n")
     console.print(table)
     console.print("\n")
+
+def place_optional_sl_tp(order_service: OrderService, main_order: dict, symbol: str, quantity: float, side: str):
+    """Place optional Stop Loss and Take Profit orders"""
+    try:
+        # Ask for Stop Loss
+        if Confirm.ask("\n[yellow]Add Stop Loss (SL)?[/yellow]", default=False):
+            sl_price = float(Prompt.ask("Stop Loss Price"))
+            opposite_side = "SELL" if side == "BUY" else "BUY"
+            
+            sl_order = OrderInput(
+                symbol=symbol,
+                side=opposite_side,
+                type=OrderType.STOP_MARKET,
+                quantity=quantity,
+                stopPrice=sl_price,
+                timeInForce="GTC"
+            )
+            
+            sl_result = order_service.place_order(sl_order, user_interface='terminal')
+            console.print(f"[green]✓ Stop Loss placed! Order ID: {sl_result.get('orderId')}[/green]")
+        
+        # Ask for Take Profit
+        if Confirm.ask("\n[yellow]Add Take Profit (TP)?[/yellow]", default=False):
+            tp_price = float(Prompt.ask("Take Profit Price"))
+            opposite_side = "SELL" if side == "BUY" else "BUY"
+            
+            tp_order = OrderInput(
+                symbol=symbol,
+                side=opposite_side,
+                type=OrderType.TAKE_PROFIT_MARKET,
+                quantity=quantity,
+                stopPrice=tp_price,
+                timeInForce="GTC"
+            )
+            
+            tp_result = order_service.place_order(tp_order, user_interface='terminal')
+            console.print(f"[green]✓ Take Profit placed! Order ID: {tp_result.get('orderId')}[/green]")
+    except Exception as e:
+        console.print(f"[red]✗ Error placing SL/TP: {e}[/red]")
 
 def place_market_order(order_service: OrderService):
     console.print("\n[bold cyan]═══ Place Market Order ═══[/bold cyan]\n")
@@ -60,6 +99,13 @@ def place_market_order(order_service: OrderService):
             result = order_service.place_order(order, user_interface='terminal')
             console.print("\n[green]✓ Order placed successfully![/green]")
             display_order_result(result)
+            
+            # Optional SL/TP
+            place_optional_sl_tp(order_service, result, symbol, quantity, side)
+            display_order_result(result)
+            
+            # Optional SL/TP
+            place_optional_sl_tp(order_service, result, symbol, quantity, side)
         else:
             console.print("[yellow]Order cancelled[/yellow]")
     except Exception as e:
@@ -88,6 +134,9 @@ def place_limit_order(order_service: OrderService):
             result = order_service.place_order(order, user_interface='terminal')
             console.print("\n[green]✓ Order placed successfully![/green]")
             display_order_result(result)
+            
+            # Optional SL/TP
+            place_optional_sl_tp(order_service, result, symbol, quantity, side)
         else:
             console.print("[yellow]Order cancelled[/yellow]")
     except Exception as e:
@@ -121,6 +170,111 @@ def place_stop_limit_order(order_service: OrderService):
         console.print(f"  At limit price [cyan]{limit_price}[/cyan] ({time_in_force})")
         
         if Confirm.ask("\nConfirm this stop order?"):
+            result = order_service.place_order(order, user_interface='terminal')
+            console.print("\n[green]✓ Order placed successfully![/green]")
+            display_order_result(result)
+        else:
+            console.print("[yellow]Order cancelled[/yellow]")
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+
+def place_stop_market_order(order_service: OrderService):
+    console.print("\n[bold cyan]═══ Place Stop Market Order (Stop Loss) ═══[/bold cyan]\n")
+    console.print("[dim]STOP_MARKET: Triggers market order at stop price (for Stop Loss)[/dim]\n")
+    
+    symbol = Prompt.ask("Symbol", default="BTCUSDT")
+    side = Prompt.ask("Side", choices=["BUY", "SELL"])
+    quantity = float(Prompt.ask("Quantity"))
+    stop_price = float(Prompt.ask("Stop Price (trigger)"))
+    time_in_force = Prompt.ask("Time in Force", choices=["GTC", "IOC", "FOK"], default="GTC")
+    
+    try:
+        order = OrderInput(
+            symbol=symbol,
+            side=side,
+            type=OrderType.STOP_MARKET,
+            quantity=quantity,
+            stopPrice=stop_price,
+            timeInForce=time_in_force
+        )
+        
+        console.print(f"\n[yellow]Order Summary:[/yellow]")
+        console.print(f"  When price reaches [cyan]{stop_price}[/cyan]")
+        console.print(f"  Execute {side} MARKET order for [cyan]{quantity}[/cyan] {symbol}")
+        console.print(f"  [dim](Stop Loss order)[/dim]")
+        
+        if Confirm.ask("\nConfirm this stop market order?"):
+            result = order_service.place_order(order, user_interface='terminal')
+            console.print("\n[green]✓ Order placed successfully![/green]")
+            display_order_result(result)
+        else:
+            console.print("[yellow]Order cancelled[/yellow]")
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+
+def place_take_profit_order(order_service: OrderService):
+    console.print("\n[bold cyan]═══ Place Take Profit Order ═══[/bold cyan]\n")
+    console.print("[dim]TAKE_PROFIT: Triggers at stop price, then places limit order[/dim]\n")
+    
+    symbol = Prompt.ask("Symbol", default="BTCUSDT")
+    side = Prompt.ask("Side", choices=["BUY", "SELL"])
+    quantity = float(Prompt.ask("Quantity"))
+    stop_price = float(Prompt.ask("Take Profit Price (trigger)"))
+    limit_price = float(Prompt.ask("Limit Price (execution)"))
+    time_in_force = Prompt.ask("Time in Force", choices=["GTC", "IOC", "FOK"], default="GTC")
+    
+    try:
+        order = OrderInput(
+            symbol=symbol,
+            side=side,
+            type=OrderType.TAKE_PROFIT,
+            quantity=quantity,
+            price=limit_price,
+            stopPrice=stop_price,
+            timeInForce=time_in_force
+        )
+        
+        console.print(f"\n[yellow]Order Summary:[/yellow]")
+        console.print(f"  When price reaches [cyan]{stop_price}[/cyan]")
+        console.print(f"  Place {side} order for [cyan]{quantity}[/cyan] {symbol}")
+        console.print(f"  At limit price [cyan]{limit_price}[/cyan] ({time_in_force})")
+        console.print(f"  [dim](Take Profit order)[/dim]")
+        
+        if Confirm.ask("\nConfirm this take profit order?"):
+            result = order_service.place_order(order, user_interface='terminal')
+            console.print("\n[green]✓ Order placed successfully![/green]")
+            display_order_result(result)
+        else:
+            console.print("[yellow]Order cancelled[/yellow]")
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+
+def place_take_profit_market_order(order_service: OrderService):
+    console.print("\n[bold cyan]═══ Place Take Profit Market Order ═══[/bold cyan]\n")
+    console.print("[dim]TAKE_PROFIT_MARKET: Triggers market order at take profit price[/dim]\n")
+    
+    symbol = Prompt.ask("Symbol", default="BTCUSDT")
+    side = Prompt.ask("Side", choices=["BUY", "SELL"])
+    quantity = float(Prompt.ask("Quantity"))
+    stop_price = float(Prompt.ask("Take Profit Price (trigger)"))
+    time_in_force = Prompt.ask("Time in Force", choices=["GTC", "IOC", "FOK"], default="GTC")
+    
+    try:
+        order = OrderInput(
+            symbol=symbol,
+            side=side,
+            type=OrderType.TAKE_PROFIT_MARKET,
+            quantity=quantity,
+            stopPrice=stop_price,
+            timeInForce=time_in_force
+        )
+        
+        console.print(f"\n[yellow]Order Summary:[/yellow]")
+        console.print(f"  When price reaches [cyan]{stop_price}[/cyan]")
+        console.print(f"  Execute {side} MARKET order for [cyan]{quantity}[/cyan] {symbol}")
+        console.print(f"  [dim](Take Profit Market order)[/dim]")
+        
+        if Confirm.ask("\nConfirm this take profit market order?"):
             result = order_service.place_order(order, user_interface='terminal')
             console.print("\n[green]✓ Order placed successfully![/green]")
             display_order_result(result)

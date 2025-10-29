@@ -423,6 +423,33 @@
                     </select>
                 </div>
 
+                <hr style="margin: 16px 0; border: none; border-top: 1px solid #27272a;">
+
+                <h3 style="color: #fafafa; margin-bottom: 10px;">⚡ Optional: Stop Loss & Take Profit</h3>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableSL" onchange="toggleSL()"
+                            style="width: auto; margin-right: 6px;">
+                        Enable Stop Loss (SL)
+                    </label>
+                    <input type="number" id="stopLoss" step="0.01" placeholder="Stop Loss Price" class="hidden">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableTP" onchange="toggleTP()"
+                            style="width: auto; margin-right: 6px;">
+                        Enable Take Profit (TP)
+                    </label>
+                    <input type="number" id="takeProfit" step="0.01" placeholder="Take Profit Price" class="hidden">
+                </div>
+
+                <div
+                    style="background: #09090b; border: 1px solid #27272a; padding: 8px; border-radius: 6px; margin-bottom: 12px; font-size: 0.65rem; color: #71717a;">
+                    💡 SL/TP orders will be placed automatically after your main order is filled
+                </div>
+
                 <button class="btn btn-primary" onclick="placeOrder()">
                     Place Order
                 </button>
@@ -591,6 +618,50 @@
                 }
             }
 
+            function toggleSL() {
+                const checkbox = document.getElementById('enableSL');
+                const input = document.getElementById('stopLoss');
+                if (checkbox.checked) {
+                    input.classList.remove('hidden');
+                } else {
+                    input.classList.add('hidden');
+                    input.value = '';
+                }
+            }
+
+            function toggleTP() {
+                const checkbox = document.getElementById('enableTP');
+                const input = document.getElementById('takeProfit');
+                if (checkbox.checked) {
+                    input.classList.remove('hidden');
+                } else {
+                    input.classList.add('hidden');
+                    input.value = '';
+                }
+            }
+
+            function toggleSL() {
+                const checkbox = document.getElementById('enableSL');
+                const input = document.getElementById('stopLoss');
+                if (checkbox.checked) {
+                    input.classList.remove('hidden');
+                } else {
+                    input.classList.add('hidden');
+                    input.value = '';
+                }
+            }
+
+            function toggleTP() {
+                const checkbox = document.getElementById('enableTP');
+                const input = document.getElementById('takeProfit');
+                if (checkbox.checked) {
+                    input.classList.remove('hidden');
+                } else {
+                    input.classList.add('hidden');
+                    input.value = '';
+                }
+            }
+
             async function placeOrder() {
                 hideAlerts();
 
@@ -601,13 +672,35 @@
                     quantity: document.getElementById('quantity').value,
                 };
 
-                if (currentOrderType === 'LIMIT' || currentOrderType === 'STOP') {
+                // Add price for limit orders
+                if (currentOrderType === 'LIMIT') {
                     orderData.price = document.getElementById('price').value;
                     orderData.timeInForce = document.getElementById('timeInForce').value;
                 }
 
+                // Add stopPrice for stop orders
                 if (currentOrderType === 'STOP') {
+                    orderData.price = document.getElementById('price').value;
                     orderData.stopPrice = document.getElementById('stopPrice').value;
+                    orderData.timeInForce = document.getElementById('timeInForce').value;
+                }
+
+                // Add optional SL/TP
+                const slEnabled = document.getElementById('enableSL').checked;
+                const tpEnabled = document.getElementById('enableTP').checked;
+
+                if (slEnabled) {
+                    const slPrice = document.getElementById('stopLoss').value;
+                    if (slPrice) {
+                        orderData.stopLoss = parseFloat(slPrice);
+                    }
+                }
+
+                if (tpEnabled) {
+                    const tpPrice = document.getElementById('takeProfit').value;
+                    if (tpPrice) {
+                        orderData.takeProfit = parseFloat(tpPrice);
+                    }
                 }
 
                 try {
@@ -624,11 +717,82 @@
                     if (data.success) {
                         showSuccess('Order placed successfully! Order ID: ' + data.order.orderId);
                         showOrderResult(data.order);
+
+                        // Place optional SL/TP orders after main order
+                        await placeOptionalOrders(data.order);
                     } else {
                         showError('Failed to place order: ' + data.error);
                     }
                 } catch (error) {
                     showError('Error: ' + error.message);
+                }
+            }
+
+            async function placeOptionalOrders(mainOrder) {
+                const symbol = mainOrder.symbol;
+                const quantity = mainOrder.origQty;
+                const side = mainOrder.side;
+
+                // Place Stop Loss if enabled
+                if (document.getElementById('enableSL').checked) {
+                    const stopLoss = document.getElementById('stopLoss').value;
+                    if (stopLoss) {
+                        try {
+                            const slOrder = {
+                                symbol: symbol,
+                                side: side === 'BUY' ? 'SELL' : 'BUY', // Opposite side
+                                type: 'STOP_MARKET',
+                                quantity: quantity,
+                                stopPrice: stopLoss,
+                                timeInForce: 'GTC'
+                            };
+
+                            const response = await fetch('/api/order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(slOrder),
+                            });
+
+                            const data = await response.json();
+                            if (data.success) {
+                                console.log('Stop Loss placed:', data.order.orderId);
+                                showSuccess('Stop Loss placed! Order ID: ' + data.order.orderId);
+                            }
+                        } catch (error) {
+                            console.error('Failed to place SL:', error);
+                        }
+                    }
+                }
+
+                // Place Take Profit if enabled
+                if (document.getElementById('enableTP').checked) {
+                    const takeProfit = document.getElementById('takeProfit').value;
+                    if (takeProfit) {
+                        try {
+                            const tpOrder = {
+                                symbol: symbol,
+                                side: side === 'BUY' ? 'SELL' : 'BUY', // Opposite side
+                                type: 'TAKE_PROFIT_MARKET',
+                                quantity: quantity,
+                                stopPrice: takeProfit,
+                                timeInForce: 'GTC'
+                            };
+
+                            const response = await fetch('/api/order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(tpOrder),
+                            });
+
+                            const data = await response.json();
+                            if (data.success) {
+                                console.log('Take Profit placed:', data.order.orderId);
+                                showSuccess('Take Profit placed! Order ID: ' + data.order.orderId);
+                            }
+                        } catch (error) {
+                            console.error('Failed to place TP:', error);
+                        }
+                    }
                 }
             }
 
