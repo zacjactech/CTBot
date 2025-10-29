@@ -52,12 +52,12 @@ A production-ready Binance Futures Trading Bot for USDT-M Futures Testnet with m
 
 ```powershell
 # Windows
-git clone https://github.com/zacjactech/CTBot
+git clone https://github.com/zacjactech/CTBot.git
 cd ctbot
 .\run.ps1 install
 
 # Linux/Mac
-git clone https://github.com/zacjactech/CTBot
+git clone https://github.com/zacjactech/CTBot.git
 cd ctbot
 make install
 ```
