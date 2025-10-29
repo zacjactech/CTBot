@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binance Futures Trading Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #09090b;
+            color: #fafafa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #18181b;
+            border: 1px solid #27272a;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #fafafa;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header .subtitle {
+            color: #a1a1aa;
+            font-size: 1.1em;
+        }
+
+        .status-bar {
+            background: #18181b;
+            border: 1px solid #27272a;
+            padding: 16px 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fafafa;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #52525b;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #22c55e;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            padding: 24px;
+            border-radius: 8px;
+        }
+
+        .card h2 {
+            color: #fafafa;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #fafafa;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #09090b;
+            border: 1px solid #27272a;
+            border-radius: 6px;
+            color: #fafafa;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #fafafa;
+            background: #18181b;
+        }
+
+        input::placeholder {
+            color: #52525b;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-primary {
+            background: #fafafa;
+            color: #09090b;
+        }
+
+        .btn-primary:hover {
+            background: #e4e4e7;
+        }
+
+        .btn-success {
+            background: #22c55e;
+            color: #09090b;
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fafafa;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            display: none;
+            font-size: 0.875rem;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #14532d;
+            color: #86efac;
+            border: 1px solid #166534;
+        }
+
+        .alert-error {
+            background: #450a0a;
+            color: #fca5a5;
+            border: 1px solid #991b1b;
+        }
+
+        .order-types {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .order-type-btn {
+            padding: 10px;
+            border: 1px solid #27272a;
+            background: #09090b;
+            color: #fafafa;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .order-type-btn:hover {
+            background: #18181b;
+            border-color: #fafafa;
+        }
+
+        .order-type-btn.active {
+            background: #fafafa;
+            color: #09090b;
+            border-color: #fafafa;
+        }
+
+        .price-display {
+            background: #09090b;
+            border: 1px solid #27272a;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .price-display .price {
+            font-size: 2em;
+            font-weight: 700;
+            color: #fafafa;
+        }
+
+        .price-display .label {
+            color: #71717a;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+
+        .order-result {
+            background: #09090b;
+            border: 1px solid #27272a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .order-result pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.75rem;
+            color: #a1a1aa;
+            font-family: 'Courier New', monospace;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #27272a;
+            margin: 24px 0;
+        }
+
+        h3 {
+            color: #fafafa;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #18181b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .order-types {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            body {
+                padding: 12px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.75em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Binance Futures Trading Bot</h1>
+            <p class="subtitle">Testnet Environment - Web Interface</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+            <button class="btn btn-primary" onclick="testConnection()" style="width: auto; padding: 10px 20px;">
+                Test Connection
+            </button>
+        </div>
+
+        <div class="main-content">
+            <!-- Place Order Card -->
+            <div class="card">
+                <h2>📈 Place Order</h2>
+                
+                <div class="alert alert-success" id="successAlert"></div>
+                <div class="alert alert-error" id="errorAlert"></div>
+
+                <div class="form-group">
+                    <label>Symbol</label>
+                    <select id="symbol" onchange="updatePrice()">
+                        <option value="BTCUSDT">BTCUSDT</option>
+                        <option value="ETHUSDT">ETHUSDT</option>
+                        <option value="BNBUSDT">BNBUSDT</option>
+                        <option value="SOLUSDT">SOLUSDT</option>
+                        <option value="ADAUSDT">ADAUSDT</option>
+                    </select>
+                </div>
+
+                <div class="price-display" id="priceDisplay">
+                    <div class="label">Current Price</div>
+                    <div class="price" id="currentPrice">--</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Order Type</label>
+                    <div class="order-types">
+                        <button class="order-type-btn active" onclick="selectOrderType('MARKET')">Market</button>
+                        <button class="order-type-btn" onclick="selectOrderType('LIMIT')">Limit</button>
+                        <button class="order-type-btn" onclick="selectOrderType('STOP')">Stop</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Side</label>
+                    <select id="side">
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" id="quantity" step="0.001" placeholder="0.001" value="0.001">
+                </div>
+
+                <div class="form-group hidden" id="priceGroup">
+                    <label>Price</label>
+                    <input type="number" id="price" step="0.01" placeholder="50000">
+                </div>
+
+                <div class="form-group hidden" id="stopPriceGroup">
+                    <label>Stop Price</label>
+                    <input type="number" id="stopPrice" step="0.01" placeholder="49000">
+                </div>
+
+                <div class="form-group hidden" id="timeInForceGroup">
+                    <label>Time in Force</label>
+                    <select id="timeInForce">
+                        <option value="GTC">GTC (Good Till Cancel)</option>
+                        <option value="IOC">IOC (Immediate or Cancel)</option>
+                        <option value="FOK">FOK (Fill or Kill)</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" onclick="placeOrder()">
+                    Place Order
+                </button>
+
+                <div class="order-result hidden" id="orderResult">
+                    <pre id="orderResultText"></pre>
+                </div>
+            </div>
+
+            <!-- Order Management Card -->
+            <div class="card">
+                <h2>🔍 Order Management</h2>
+
+                <div class="alert alert-success" id="successAlert2"></div>
+                <div class="alert alert-error" id="errorAlert2"></div>
+
+                <div style="background: #09090b; border: 1px solid #27272a; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 0.75rem; color: #71717a;">
+                    💡 <strong style="color: #a1a1aa;">Tip:</strong> Only NEW orders can be cancelled. Filled or already cancelled orders will show "Order not found" error.
+                </div>
+
+                <div class="form-group">
+                    <label>Symbol</label>
+                    <select id="manageSymbol">
+                        <option value="BTCUSDT">BTCUSDT</option>
+                        <option value="ETHUSDT">ETHUSDT</option>
+                        <option value="BNBUSDT">BNBUSDT</option>
+                        <option value="SOLUSDT">SOLUSDT</option>
+                        <option value="ADAUSDT">ADAUSDT</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Order ID</label>
+                    <input type="number" id="orderId" placeholder="123456789">
+                </div>
+
+                <button class="btn btn-success" onclick="checkOrderStatus()">
+                    Check Status
+                </button>
+
+                <button class="btn btn-danger" onclick="cancelOrder()">
+                    Cancel Order
+                </button>
+
+                <div class="order-result hidden" id="manageResult">
+                    <pre id="manageResultText"></pre>
+                </div>
+
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+                <h3 style="color: #667eea; margin-bottom: 15px;">📊 Symbol Info</h3>
+                <button class="btn btn-primary" onclick="getSymbolInfo()">
+                    View Symbol Details
+                </button>
+
+                <div class="order-result hidden" id="symbolInfo">
+                    <pre id="symbolInfoText"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentOrderType = 'MARKET';
+
+        // Test connection on load
+        window.onload = function() {
+            testConnection();
+            updatePrice();
+        };
+
+        async function testConnection() {
+            try {
+                const response = await fetch('/api/ping');
+                const data = await response.json();
+                
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                
+                if (data.success) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'Connected to Binance Futures';
+                } else {
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'Connection Failed';
+                }
+            } catch (error) {
+                console.error('Connection test failed:', error);
+                document.getElementById('statusText').textContent = 'Connection Error';
+            }
+        }
+
+        async function updatePrice() {
+            const symbol = document.getElementById('symbol').value;
+            try {
+                const response = await fetch(`/api/price/${symbol}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('currentPrice').textContent = 
+                        '$' + parseFloat(data.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                }
+            } catch (error) {
+                console.error('Failed to get price:', error);
+            }
+        }
+
+        function selectOrderType(type) {
+            currentOrderType = type;
+            
+            // Update button states
+            document.querySelectorAll('.order-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide fields based on order type
+            const priceGroup = document.getElementById('priceGroup');
+            const stopPriceGroup = document.getElementById('stopPriceGroup');
+            const timeInForceGroup = document.getElementById('timeInForceGroup');
+            
+            priceGroup.classList.add('hidden');
+            stopPriceGroup.classList.add('hidden');
+            timeInForceGroup.classList.add('hidden');
+            
+            if (type === 'LIMIT') {
+                priceGroup.classList.remove('hidden');
+                timeInForceGroup.classList.remove('hidden');
+            } else if (type === 'STOP') {
+                priceGroup.classList.remove('hidden');
+                stopPriceGroup.classList.remove('hidden');
+                timeInForceGroup.classList.remove('hidden');
+            }
+        }
+
+        async function placeOrder() {
+            hideAlerts();
+            
+            const orderData = {
+                symbol: document.getElementById('symbol').value,
+                side: document.getElementById('side').value,
+                type: currentOrderType,
+                quantity: document.getElementById('quantity').value,
+            };
+            
+            if (currentOrderType === 'LIMIT' || currentOrderType === 'STOP') {
+                orderData.price = document.getElementById('price').value;
+                orderData.timeInForce = document.getElementById('timeInForce').value;
+            }
+            
+            if (currentOrderType === 'STOP') {
+                orderData.stopPrice = document.getElementById('stopPrice').value;
+            }
+            
+            try {
+                const response = await fetch('/api/order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(orderData),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Order placed successfully! Order ID: ' + data.order.orderId);
+                    showOrderResult(data.order);
+                } else {
+                    showError('Failed to place order: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+
+        async function checkOrderStatus() {
+            hideAlerts('manage');
+            
+            const symbol = document.getElementById('manageSymbol').value;
+            const orderId = document.getElementById('orderId').value;
+            
+            if (!orderId) {
+                showError('Please enter an Order ID', 'manage');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/order/${symbol}/${orderId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Order found!', 'manage');
+                    showManageResult(data.order);
+                } else {
+                    showError('Failed to get order: ' + data.error, 'manage');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message, 'manage');
+            }
+        }
+
+        async function cancelOrder() {
+            hideAlerts('manage');
+            
+            const symbol = document.getElementById('manageSymbol').value;
+            const orderId = document.getElementById('orderId').value;
+            
+            if (!orderId) {
+                showError('Please enter an Order ID', 'manage');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to cancel this order?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/order/${symbol}/${orderId}`, {
+                    method: 'DELETE',
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Order cancelled successfully!', 'manage');
+                    showManageResult(data.order);
+                } else {
+                    showError('Failed to cancel order: ' + data.error, 'manage');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message, 'manage');
+            }
+        }
+
+        async function getSymbolInfo() {
+            const symbol = document.getElementById('manageSymbol').value;
+            
+            try {
+                const response = await fetch(`/api/symbol/${symbol}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('symbolInfo').classList.remove('hidden');
+                    document.getElementById('symbolInfoText').textContent = 
+                        JSON.stringify(data.info, null, 2);
+                } else {
+                    showError('Failed to get symbol info: ' + data.error, 'manage');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message, 'manage');
+            }
+        }
+
+        function showSuccess(message, section = 'order') {
+            const alertId = section === 'order' ? 'successAlert' : 'successAlert2';
+            const alert = document.getElementById(alertId);
+            alert.textContent = message;
+            alert.classList.add('show');
+        }
+
+        function showError(message, section = 'order') {
+            const alertId = section === 'order' ? 'errorAlert' : 'errorAlert2';
+            const alert = document.getElementById(alertId);
+            alert.textContent = message;
+            alert.classList.add('show');
+        }
+
+        function hideAlerts(section = 'order') {
+            if (section === 'order') {
+                document.getElementById('successAlert').classList.remove('show');
+                document.getElementById('errorAlert').classList.remove('show');
+            } else {
+                document.getElementById('successAlert2').classList.remove('show');
+                document.getElementById('errorAlert2').classList.remove('show');
+            }
+        }
+
+        function showOrderResult(order) {
+            document.getElementById('orderResult').classList.remove('hidden');
+            document.getElementById('orderResultText').textContent = 
+                JSON.stringify(order, null, 2);
+        }
+
+        function showManageResult(order) {
+            document.getElementById('manageResult').classList.remove('hidden');
+            document.getElementById('manageResultText').textContent = 
+                JSON.stringify(order, null, 2);
+        }
+
+        // Auto-refresh price every 5 seconds
+        setInterval(updatePrice, 5000);
+    </script>
+</body>
+</html>
