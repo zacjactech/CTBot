@@ -53,7 +53,7 @@ A production-ready Binance Futures Trading Bot for USDT-M Futures Testnet with m
 **Windows (PowerShell):**
 ```powershell
 # Clone repository
-git clone https://github.com/zacjactech/CTBot
+git clone <https://github.com/zacjactech/CTBot>
 cd ctbot
 
 # Install dependencies
@@ -67,7 +67,7 @@ notepad .env  # Add your Binance Testnet API keys
 **Linux/Mac:**
 ```bash
 # Clone repository
-git clone https://github.com/zacjactech/CTBot
+git clone <https://github.com/zacjactech/CTBot>
 cd ctbot
 
 # Install dependencies
