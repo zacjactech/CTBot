@@ -50,62 +50,43 @@ A production-ready Binance Futures Trading Bot for USDT-M Futures Testnet with m
 
 ### Installation
 
-**Windows (PowerShell):**
 ```powershell
-# Clone repository
+# Windows
 git clone https://github.com/zacjactech/CTBot
 cd ctbot
-
-# Install dependencies
 .\run.ps1 install
 
-# Configure API keys
-copy .env.example .env
-notepad .env  # Add your Binance Testnet API keys
-```
-
-**Linux/Mac:**
-```bash
-# Clone repository
+# Linux/Mac
 git clone https://github.com/zacjactech/CTBot
 cd ctbot
-
-# Install dependencies
 make install
-
-# Configure API keys
-cp .env.example .env
-nano .env  # Add your Binance Testnet API keys
 ```
 
-### Get Binance Testnet API Keys
+### Configure API Keys
 
-1. Go to [Binance Futures Testnet](https://testnet.binancefuture.com/)
-2. Create an account
-3. Generate API Key and Secret
-4. Add to `.env` file
+1. Get API keys from [Binance Futures Testnet](https://testnet.binancefuture.com/)
+2. Copy `.env.example` to `.env`
+3. Add your API Key and Secret to `.env`
 
-### First Run
+### Launch
 
-**Windows:**
 ```powershell
-# Test connection
+# Windows - Test connection
 .\run.ps1 ping
 
-# Launch web UI (easiest!)
+# Windows - Launch web UI (recommended)
 .\run.ps1 web
-# Open browser to http://localhost:5000
+
+# Windows - Launch interactive terminal
+.\run.ps1 interactive
+
+# Linux/Mac
+make ping          # Test connection
+make web           # Web UI
+make interactive   # Terminal UI
 ```
 
-**Linux/Mac:**
-```bash
-# Test connection
-make ping
-
-# Launch web UI
-make web
-# Open browser to http://localhost:5000
-```
+Open browser to http://localhost:5000 for web UI
 
 ---
 
@@ -220,42 +201,19 @@ poetry run python -m src.cli symbols \
 
 ## 📊 Order Types
 
-### 1. MARKET Orders
-- Execute immediately at best available price
-- Fastest execution
-- No price specification needed
+### Core Order Types
 
-### 2. LIMIT Orders
-- Execute at specified price or better
-- Control over execution price
-- Supports GTC, IOC, FOK time in force
+1. **MARKET** - Execute immediately at best available price
+2. **LIMIT** - Execute at specified price or better (GTC, IOC, FOK)
+3. **STOP** ⭐ - Stop-limit functionality (bonus feature)
 
-### 3. STOP Orders ⭐ (Bonus Feature)
-- Stop-limit functionality
-- Triggers at stop price
-- Executes as limit order at specified price
-- Perfect for stop losses and breakout entries
+### Additional Order Types
 
-**Example:**
-```bash
-# When BTC reaches $113,872, place limit buy at $113,972
-poetry run python -m src.cli order \
-  --symbol BTCUSDT \
-  --side BUY \
-  --type STOP \
-  --quantity 0.002 \
-  --price 113972 \
-  --stopPrice 113872 \
-  --timeInForce GTC
-```
-
-### Additional Order Types Supported
-
-- **STOP_MARKET** - Stop with market execution
-- **TAKE_PROFIT** - Take profit with limit price
-- **TAKE_PROFIT_MARKET** - Take profit with market execution
-- **STOP_LIMIT** - Explicit stop-limit (if supported by exchange)
-- **TAKE_PROFIT_LIMIT** - Explicit take-profit-limit
+4. **STOP_MARKET** - Stop with market execution
+5. **TAKE_PROFIT** - Take profit with limit price
+6. **TAKE_PROFIT_MARKET** - Take profit with market execution
+7. **STOP_LIMIT** - Explicit stop-limit
+8. **TAKE_PROFIT_LIMIT** - Explicit take-profit-limit
 
 **Total: 8 order types implemented**
 
@@ -263,75 +221,22 @@ poetry run python -m src.cli order \
 
 ## 🗄️ Database & Tracking
 
-### Automatic Order Tracking
+### Automatic Tracking
 
-Every order and action is automatically saved to SQLite database:
-- ✅ Order placement (all types)
-- ✅ Order status updates
-- ✅ Order cancellations
-- ✅ Success and error events
-- ✅ User interface tracking (CLI, Terminal, Web)
-- ✅ Timestamps for everything
+Every order and action is saved to SQLite database with full details including timestamps, status, and API responses.
 
-### Database Tables
+### View Database
 
-**1. Order History**
-- Order ID, Symbol, Side, Type
-- Quantity, Price, Stop Price
-- Status, Executed Quantity, Average Price
-- Created/Updated timestamps
-- Full API response data
-
-**2. Activity Log**
-- Timestamp, Action, Status
-- Symbol, Order ID
-- Success/Error messages
-- User interface used
-- Error details
-
-### Viewing Database Data
-
-**Windows:**
 ```powershell
-# View order history
-.\run.ps1 db-history
+# Windows
+.\run.ps1 db-history    # Order history
+.\run.ps1 db-logs       # Activity logs
+.\run.ps1 db-stats      # Trading statistics
 
-# View activity logs
-.\run.ps1 db-logs
-
-# View trading statistics
-.\run.ps1 db-stats
-```
-
-**Linux/Mac:**
-```bash
-# View order history
+# Linux/Mac
 make db-history
-
-# View activity logs
 make db-logs
-
-# View trading statistics
 make db-stats
-```
-
-**Example Output:**
-```
-┌────┬────────────┬──────────┬──────┬────────┬────────┬────────┬──────────┬─────────────────────┐
-│ ID │ Order ID   │ Symbol   │ Side │ Type   │ Qty    │ Price  │ Status   │ Created             │
-├────┼────────────┼──────────┼──────┼────────┼────────┼────────┼──────────┼─────────────────────┤
-│ 1  │ 7725507570 │ BTCUSDT  │ BUY  │ MARKET │ 0.0010 │ MARKET │ FILLED   │ 2025-10-29 15:43:01 │
-│ 2  │ 7725507571 │ ETHUSDT  │ SELL │ LIMIT  │ 0.1000 │ 2000.00│ NEW      │ 2025-10-29 15:45:12 │
-└────┴────────────┴──────────┴──────┴────────┴────────┴────────┴──────────┴─────────────────────┘
-
-Trading Statistics:
-┌─────────────────────┬────────┐
-│ Total Orders        │ 25     │
-│ Filled Orders       │ 18     │
-│ Cancelled Orders    │ 5      │
-│ Pending Orders      │ 2      │
-│ Success Rate        │ 72.00% │
-└─────────────────────┴────────┘
 ```
 
 ### Web API Endpoints
@@ -341,64 +246,33 @@ Trading Statistics:
 - `GET /api/logs` - Activity logs
 - `GET /api/price/<symbol>` - Current price
 - `POST /api/order` - Place order
-- `GET /api/order/<symbol>/<id>` - Get order status
+- `GET /api/order/<symbol>/<id>` - Order status
 - `DELETE /api/order/<symbol>/<id>` - Cancel order
 
 ---
 
-## 📝 Logging System
+## 📝 Logging
 
-### Dual Logging Approach
-
-**1. File Logging (`logs/bot.log`)**
-- Detailed API requests and responses
-- Stack traces for errors
-- Debug information
-- Rotating log files (5MB, 5 backups)
-
-**2. Database Logging (`trading_bot.db`)**
-- Structured order data
-- Queryable activity logs
-- Trading statistics
-- Performance metrics
-
-Both systems work together for complete tracking.
+Dual logging system:
+- **File logs** (`logs/bot.log`) - Detailed API requests, responses, errors
+- **Database logs** (`trading_bot.db`) - Structured order data, statistics
 
 ---
 
 ## 🧪 Testing
 
-### Run Tests
-
-**Windows:**
 ```powershell
+# Windows
 .\run.ps1 test
-```
 
-**Linux/Mac:**
-```bash
+# Linux/Mac
 make test
 ```
 
-### Test Coverage
-
-```
-tests/test_orders.py::test_place_limit_order PASSED
-tests/test_orders.py::test_place_market_order PASSED
-tests/test_orders.py::test_place_stop_order PASSED
-tests/test_validators.py::test_valid_params PASSED
-tests/test_validators.py::test_quantity_too_low PASSED
-
-5 passed, 3 warnings
-```
-
-**Test Coverage:**
-- ✅ Market order placement
-- ✅ Limit order placement
-- ✅ Stop order placement (bonus feature)
-- ✅ Order parameter validation
-- ✅ Price/quantity normalization
-- ✅ Enum serialization
+**Test Coverage (5/5 passing):**
+- Market, Limit, Stop order placement
+- Order parameter validation
+- Price/quantity normalization
 
 ---
 
@@ -451,57 +325,20 @@ ctbot/
 
 ## 🛡️ Validation & Safety
 
-### Automatic Validation
-
-1. **Price Normalization** - Rounds to exchange tick size
-2. **Quantity Validation** - Ensures compliance with step size
-3. **Notional Value Checks** - Validates minimum order value ($100)
-4. **Parameter Validation** - Ensures all required fields present
-5. **Enum Conversion** - Proper serialization for API
-
-### Error Handling
-
-- Descriptive error messages
-- API error code translation
+Automatic validation includes:
+- Price normalization to exchange tick size
+- Quantity validation with step size
+- Minimum order value checks ($100)
+- Parameter validation with Pydantic
 - User-friendly error messages
-- Validation before submission
-- Comprehensive logging
-
-**Example Error Messages:**
-- "Insufficient margin. Please add more testnet funds."
-- "Order value too small. Minimum is $100."
-- "Order not found. It may have already been filled or cancelled."
 
 ---
 
 ## 🔧 Dependencies
 
-### Core Dependencies
-
-```toml
-python = "^3.10"
-python-binance = "^1.0.19"      # Binance API client
-pydantic = "^2.4.2"             # Data validation
-pydantic-settings = "^2.0.0"    # Settings management
-python-dotenv = "^1.0.0"        # Environment variables
-requests = "^2.31.0"            # HTTP requests
-sqlalchemy = "^2.0.0"           # Database ORM
-```
-
-### UI Dependencies
-
-```toml
-rich = "^13.6.0"                # Terminal formatting
-flask = "^3.0.0"                # Web framework
-flask-cors = "^4.0.0"           # CORS support
-```
-
-### Development Dependencies
-
-```toml
-pytest = "^7.4.2"               # Testing framework
-ruff = "latest"                 # Linting and formatting
-```
+**Core:** python-binance, pydantic, sqlalchemy, python-dotenv  
+**UI:** rich (terminal), flask (web)  
+**Dev:** pytest, ruff
 
 ---
 
@@ -561,84 +398,22 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## 📈 Use Cases
 
-### For Beginners
-**Recommended: Web UI**
-- Easiest to use
-- Visual feedback
-- No commands to remember
-- Mobile access
-
-### For Terminal Users
-**Recommended: Interactive Terminal UI**
-- No browser needed
-- Fast navigation
-- Keyboard-driven
-- Rich formatting
-
-### For Automation
-**Recommended: CLI**
-- Script integration
-- Cron jobs
-- CI/CD pipelines
-- Batch operations
-
-### For Development
-**All Interfaces Available**
-- Test with web UI
-- Automate with CLI
-- Debug with terminal UI
-- Track with database
+- **Beginners** → Web UI (visual, easy)
+- **Terminal Users** → Interactive Terminal UI (keyboard-driven)
+- **Automation** → CLI (scripting, CI/CD)
+- **Development** → All interfaces + database tracking
 
 ---
 
 ## 🎯 Project Highlights
 
-### Exceeds Requirements
-
 ✅ **Core Requirements**: 100% Complete  
-⭐ **Bonus Feature 1** (Stop Orders): Complete  
-⭐ **Bonus Feature 2** (UI Interface): Complete x3!  
-🌐 **Extra Features**: Database, Web UI, Statistics
+⭐ **Bonus Features**: Stop Orders + UI Interface (x3!)  
+🌐 **Extra Features**: Database tracking, Web UI, Statistics, REST API
 
-### Code Quality
-
-- ✅ Clean, modular architecture
-- ✅ Type hints throughout
-- ✅ Comprehensive error handling
-- ✅ Full test coverage (5/5 passing)
-- ✅ Production-ready code
-- ✅ Cross-platform support
-
-### User Experience
-
-- ✅ 3 different interfaces
-- ✅ Real-time updates
-- ✅ Visual feedback
-- ✅ Mobile-friendly web UI
-- ✅ User-friendly error messages
-- ✅ Comprehensive documentation
-
-### Professional Features
-
-- ✅ Database tracking
-- ✅ Activity logging
-- ✅ Trading statistics
-- ✅ REST API
-- ✅ Automatic validation
-- ✅ Error recovery
-
----
-
-## 📊 Statistics
-
-- **Lines of Code**: 3,000+
-- **Files Created**: 30+
-- **Documentation Pages**: 10+
-- **Test Coverage**: 5/5 passing
-- **Order Types**: 8
-- **User Interfaces**: 3
-- **Database Tables**: 2
-- **API Endpoints**: 7
+**Code Quality:** Clean architecture, type hints, error handling, 5/5 tests passing  
+**User Experience:** 3 interfaces, real-time updates, mobile-friendly  
+**Professional:** Database logging, statistics, validation, cross-platform
 
 ---
 
